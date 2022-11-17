@@ -7,25 +7,33 @@ function App() {
   const [reportType, setReportType] = useState();
   const [devices, setDevices] = useState([]);
   const [deviceParameters, setDeviceParameters] = useState();
+  const [deviceData, setDeviceData] = useState([]);
   const [queryData, setQueryData] = useState({
+    interval: "",
     device: "",
     from: "",
     to: "",
     parameter: ""
   });
-  const { device, from, to, parameter } = queryData;
+  const { interval, device, from, to, parameter } = queryData;
+  // eslint-disable-next-line
   let options = []
   useEffect(() => {
     if (deviceParameters) {
+      // eslint-disable-next-line
       deviceParameters.map((item) => {
         options.push({ value: item._id, label: item._id })
       })
     }
+    // eslint-disable-next-line
   }, [deviceParameters, options]);
 
   const onInputChange = e => {
     setQueryData({ ...queryData, [e.target.name]: e.target.value });
   };
+  const handleChange = (value, name) => {
+    setQueryData({ ...queryData, [name]: value });
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -50,7 +58,10 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    const response = await axios.post(`${process.env.REACT_APP_API_URL}/report`, queryData, { withCredentials: true })
+    if (response) {
+        setDeviceData(response.data)
+    }
   }
   return (
     <div className="App">
@@ -65,7 +76,7 @@ function App() {
         <form onSubmit={handleSubmit}>
           <div className="row mt-2">
             <div className="col-md-2">
-              <select className="form-select" name='interval' onChange={onInputChange}>
+              <select className="form-select" name='interval' defaultValue={interval} onChange={onInputChange}>
                 <option >Interval</option>
                 <option value="default">Default</option>
                 <option value="30">30 Min</option>
@@ -83,21 +94,16 @@ function App() {
               </select>
             </div>
             <div className="col-md-2">
-              <input type="date" name='from' className='form-control' placeholder='Select start time' onChange={onInputChange} />
+              <input type="date" name='from' value={from} className='form-control' placeholder='Select start time' onChange={onInputChange} />
             </div>
             <div className="col-md-2">
-              <input type="date" name='to' className='form-control' placeholder='Select start time' onChange={onInputChange} />
+              <input type="date" name='to' value={to} className='form-control' placeholder='Select start time' onChange={onInputChange} />
             </div>
             <div className="col-md-3">
-              {/* <select className="form-select" name='parameter[]' onChange={onInputChange} multiple>
-                <option >Select Parameter</option>
-                {deviceParameters && deviceParameters.length > 0 && deviceParameters.map((item, index) => (
-                  <option value={item._id} key={index}>{item._id}</option>
-                ))}
-              </select> */}
               <Select
                 isMulti
-                name="colors"
+                defaultInputValue={parameter}
+                onChange={(value) => handleChange(value, 'parameter')}
                 options={options}
                 className="basic-multi-select"
                 classNamePrefix="select"
@@ -106,6 +112,11 @@ function App() {
             <div className="col-md-1"> <button className='btn btn-warning' type='submit'>View</button></div>
           </div>
         </form>
+        <div className='row'>
+          <div className='col-md-12'>
+            {deviceData && reportType === "table" ? "table component" : "graph component"}
+          </div>
+        </div>
       </div>
     </div>
   );
